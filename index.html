@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>TOTP One-time password</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, 'Roboto', Arial, sans-serif;
+      margin: 0;
+      margin: 1em .8em;
+      font-size: .95em;
+    }
+    p {
+      margin: .8em 0;
+    }
+    a {
+      color: #2f559f;
+      text-decoration: none;
+    }
+    a.def {
+      color: inherit;
+    }
+    a:hover, a:focus {
+      text-decoration: underline;
+    }
+    .disclaimer {
+      padding: .5em .8em;
+      background: #fffc5a;
+      position: relative;
+      left: -0.8em;
+      right: -0.8em;
+      width: 100%;
+    }
+    fieldset > div {
+      margin-bottom: .3em;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <div>
+      <h1 style="margin-bottom: .2em;">Time-based One-time Password Algorithm</h1>
+      <div class="disclaimer">
+        <div>The contents of this webpage is from <a class="def" href="https://jsfiddle.net/user/russau/fiddles/">russau</a>'s <a href="https://jsfiddle.net/russau/ch8PK/">TOTP One-time password</a> from JSFiddle with some changes including <a class="def" href="https://github.com/neocotic/qrious" title="QRious (github.com/neocotic/qrious)">a new Javascript QR generator</a>. <a class="def" href="https://github.com/xyr11/totp-generator/blob/main/README.md" style="font-size: .8em;">Check the README file for more info.</a></div>
+      </div>
+      <p>This page contains a Javascript implementation of the <em>Time-based One-time Password Algorithm</em> used by Google Authenticator and described in the <a href="http://tools.ietf.org/id/draft-mraihi-totp-timebased-06.html">TOTP RFC Draft</a>.</p>
+      <p>Install Google Authenticator on your smartphone: <a href="http://itunes.apple.com/au/app/google-authenticator/id388497605?mt=8">iOS</a>, <a href="https://market.android.com/details?id=com.google.android.apps.authenticator&hl=en">Android</a>, <a href="http://m.google.com/authenticator">Blackberry</a>. As the TOTP is an open standard you can use this app to create one-time passwords for your own application. You add an account plus secret by scanning a QR code (more info on the <a href="http://code.google.com/p/google-authenticator/wiki/KeyUriFormat">google code wiki</a>). The javascript below implements the algorithm the smartphone app uses to generate the OTP - you would use this same algorithm <em>server-side</em> to verify an OTP.</p>
+      <p>Put it to the test by setting the base32 secret, scanning the QR code in Google Authenticate. You should see the same OTP on your smartphone and displayed at the bottom on the page.</p>
+    </div>
+    <div style="margin: auto; max-width: 400px">
+      <noscript>Javascript is needed for this page to work.</noscript>
+      <form>
+        <fieldset>
+          <div>
+            <label for="secret">Secret (base32)</label>
+            <div><input type="text" size="30" name="secret" id="secret" class="xlarge" value="JBSWY3DPEHPK3PXP" /></div>
+          </div>
+          <div>
+            <label>Secret (hex)</label>
+            <div>
+              <span id="secretHex"></span>
+              <span id='secretHexLength'></span>
+            </div>
+          </div>
+          <div>
+            <label>QR Code</label>
+            <div><canvas id="qr-code"></canvas></div>
+          </div>
+          <div>
+            <label>Unix epoch div 30 (padded hex)</label>
+            <div>
+              <span id='epoch'></span>
+            </div>
+          </div>
+          <div>
+            <label>HMAC(secret, time)</label>
+            <div id='hmac'></div>
+          </div>
+          <div>
+            <label>One-time Password</label>
+            <div>
+              <b><span id='otp'></span></b>
+            </div>
+          </div>
+          <div>
+            <label>Updating in</label>
+            <div>
+              <b><span id='updatingIn'></span></b>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </main>
+  <script src="js/sha.js"></script>
+  <script src="js/jquery-1.6.4.js"></script>
+  <script src="js/qrious.min.js"></script>
+  <script>
+    function generateQRCode(val) {
+      var qr = new QRious({ element: document.getElementById('qr-code'), size: 200, value: 'e' })
+      qr.set({ foreground: 'black', size: 200, value: val})
+    }
+    function dec2hex(s) {
+      return (s < 15.5 ? '0' : '') + Math.round(s).toString(16)
+    }
+    function hex2dec(s) {
+      return parseInt(s, 16)
+    }
+    function base32tohex(base32) {
+      var base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+      var bits = ''
+      var hex = ''
+      for (var i = 0; i < base32.length; i++) {
+        var val = base32chars.indexOf(base32.charAt(i).toUpperCase());
+        bits += leftpad(val.toString(2), 5, '0');
+      }
+      for (var i = 0; i + 4 <= bits.length; i += 4) {
+        var chunk = bits.substr(i, 4);
+        hex = hex + parseInt(chunk, 2).toString(16);
+      }
+      return hex;
+    }
+    
+    function leftpad(str, len, pad) {
+      if (len + 1 >= str.length) {
+        return Array(len + 1 - str.length).join(pad) + str
+      }
+    }
+    
+    function updateOtp() {
+      var key = base32tohex($('#secret').val());
+      var epoch = Math.round(new Date().getTime() / 1000.0);
+      var time = leftpad(dec2hex(Math.floor(epoch / 30)), 16, '0');
+      
+      var shaObj = new jsSHA("SHA-1", "HEX");
+      shaObj.setHMACKey(key, "HEX");
+      shaObj.update(time);
+      var hmac = shaObj.getHMAC("HEX");
+      
+      generateQRCode('otpauth://totp/Twitter%20Client?secret=' + $('#secret').val()); // QR Code
+      $('#secretHex').text(key);
+      $('#secretHexLength').text((key.length * 4) + ' bits');
+      $('#epoch').text(time);
+      $('#hmac').empty();
+      
+      if (hmac === 'KEY MUST BE IN BYTE INCREMENTS') {
+        $('#hmac').append($('<span/>').addClass('label important').append(hmac));
+      } else {
+        var offset = hex2dec(hmac.substring(hmac.length - 1));
+        var part1 = hmac.substr(0, offset * 2);
+        var part2 = hmac.substr(offset * 2, 8);
+        var part3 = hmac.substr(offset * 2 + 8, hmac.length - offset);
+        if (part1.length > 0) $('#hmac').append($('<span/>').addClass('label label-default').append(part1));
+        $('#hmac').append($('<span/>').addClass('label label-primary').append(part2));
+        if (part3.length > 0) $('#hmac').append($('<span/>').addClass('label label-default').append(part3));
+      }
+      
+      var otp = (hex2dec(hmac.substr(offset * 2, 8)) & hex2dec('7fffffff')) + '';
+      otp = (otp).substr(otp.length - 6, 6);
+      
+      $('#otp').text(otp);
+    }
+    
+    function timer() {
+      var epoch = Math.round(new Date().getTime() / 1000.0);
+      var countDown = 30 - (epoch % 30);
+      if (epoch % 30 == 0) updateOtp();
+      $('#updatingIn').text(countDown);
+    }
+    
+    $(function() {
+      updateOtp();
+      
+      $('#update').click(function(event) {
+        updateOtp();
+        event.preventDefault();
+      });
+      
+      $('#secret').keyup(function() {
+        updateOtp();
+      });
+      
+      setInterval(timer, 1000);
+    });
+  </script>
+</body>
+
+</html>
