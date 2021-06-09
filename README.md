@@ -9,7 +9,7 @@ See it live: <https://xyr11.github.io/totp-generator/>
 The original code doesn't have a license, and QRious is released under the [GPL v3 License](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
 ## Installation
-You can download the latest version from the Releases page here: <https://github.com/xyr11/simple-html-previewer/releases>
+You can download the latest version from the Releases page here: <https://github.com/xyr11/totp-generator/releases>
 
 ## License
 Distributed under the MIT License. See [`LICENSE`](https://github.com/xyr11/totp-generator/blob/main/LICENSE) for more information
