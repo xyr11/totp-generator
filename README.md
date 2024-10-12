@@ -1,4 +1,4 @@
-# TOTP Generator for Apps
+# TOTP Generator
 *A time-based one-time password (TOTP) generator implementation in JavaScript*
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
