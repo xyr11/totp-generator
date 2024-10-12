@@ -21,16 +21,12 @@ body {
   max-width: 80ch;
   line-height: 1.5;
 }
-p, button, hr, .highlight {
-  margin: .8em 0
-}
+p, button, hr, .highlight { margin: .8em 0 }
 a {
   color: #2f559f;
   text-decoration: dashed underline
 }
-a:hover, a:focus {
-  text-decoration: none
-}
+a:hover, a:focus { text-decoration: none }
 h2 {
   font-weight: 700;
   font-size: 1.05em;
@@ -49,11 +45,14 @@ h2 {
 #form {
   margin: 1em auto;
   max-width: 50ch;
-  border: 1px solid #cecece;
-  border-radius: .5em;
-  padding: .5em;
 }
-.longinput {
+section {
+  margin: .5em 0;
+  padding: .5em .8em;
+  border: 1px solid #cecece;
+  border-radius: 6px;
+}
+.longInput {
   width: 95%;
   max-width: 50ch;
 }
@@ -79,72 +78,71 @@ label {
 </head>
 <body>
   <main>
-    <section>
-      <h1 style="margin-bottom: .2em;">Time-based One-time Password Algorithm</h1>
-      <div class="disclaimer">
-        <div>This page is a modified version of <a href="https://jsfiddle.net/russau/ch8PK/">russau's JSFiddle</a>. This website works in the browser and does not transmit any data. <a href="https://github.com/xyr11/totp-generator">Check the GitHub page for more info.</a></div>
-      </div>
-      <p>This page contains a JavaScript implementation of the <em>Time-based One-time Password Algorithm</em> used by Google Authenticator and other OTP apps, described in the <a href="http://tools.ietf.org/id/draft-mraihi-totp-timebased-06.html">TOTP RFC Draft</a>.</p>
-      <p>There are a lot of OTP applications available <a href="https://en.wikipedia.org/wiki/Comparison_of_OTP_applications">(check out Wikipedia's list)</a>. TOTP is an open standard, so you can use these apps to create one-time passwords for your own application. Some apps can add an OTP by simply scanning a QR code <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">(more info on the URI format can be found here)</a>.</p>
-      <p>This page implements the same OTP algorithm these apps use &ndash; you would use this same algorithm <em>server-side</em> to verify an OTP. Test it by setting the OTP Label and Base32 secret and scanning the QR code in your app. The OTP on your app should be the same as the one at the bottom of this page. (This browser and your app must be synchronized using an internet time source to generate the same OTP codes.)</p>
-      <p>The OTP format used below is based on the <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">OTP Key URI format by Google</a>.</p>
-      <noscript>
-        <div class="disclaimer">Javascript is needed for this page to work.</div>
-      </noscript>
-    </section>
-    <section id="form">
-      <h2>OTP properties</h2>
-      <div>
-        <label for="label">Label:</label>
-        <div><input type="text" name="label" class="longinput" id="label" placeholder="GitHub: mail@site.com" oninput="fetchOTP()" /></div>
-      </div>
-      <div>
-        <label for="secret">Secret: (<a href="https://en.wikipedia.org/wiki/Base32">in Base32</a>)</label>
-        <div><input type="text" name="secret" class="longinput" id="secret" placeholder="A-Z & 2-7" oninput="fetchOTP()" /></div>
-      </div>
-      <div>
-        <label for="issuer">Issuer: (optional)</label>
-        <div><input type="text" name="issuer" class="longinput" id="issuer" placeholder="GitHub" oninput="fetchOTP()" /></div>
-      </div>
-      <details>
-        <summary>QR Code options</summary>
-        <fieldset>
-          <div>
-            <label for="qrbg">background:</label> <input type="text" size="20" name="qrbg" id="background" placeholder="white" oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            <label for="qrbgalpha">backgroundAlpha:</label> <input type="number" size="3" name="qrbgalpha" id="backgroundAlpha" placeholder="1.00" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            <label for="qrfg">foreground:</label> <input type="text" size="20" name="qrfg" id="foreground" placeholder="black" oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            <label for="qrfgalpha">foregroundAlpha:</label> <input type="number" size="3" name="qrfgalpha" id="foregroundAlpha" placeholder="1.0" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            Level:
-            <input type="radio" name="qrlvl" id="lvlL" value="lvlL" checked onchange="updateQrCode('level','L')" /><label for="lvlL">L</label>
-            <input type="radio" name="qrlvl" id="lvlM" value="lvlM" onchange="updateQrCode('level','M')" /><label for="lvlM">M</label>
-            <input type="radio" name="qrlvl" id="lvlQ" value="lvlQ" onchange="updateQrCode('level','Q')" /><label for="lvlQ">Q</label>
-            <input type="radio" name="qrlvl" id="lvlH" value="lvlH" onchange="updateQrCode('level','H')" /><label for="lvlH">H</label>
-          </div>
-          <div>
-            <label for="qrmime">mime:</label> <input type="text" size="32" name="qrmime" id="mime" oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            <label for="qrpadd">padding (pixels):</label> <input type="number" size="4" name="qrpadd" id="padding" placeholder="null" step="1" min="0" oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            <label for="qrsize">size (pixels):</label> <input type="number" size="4" name="qrsize" id="size" placeholder="200" step="1" oninput="updateQrCode(this.id, this.value)" />
-          </div>
-          <div>
-            <label for="qrvalue">value:</label> <input type="text" size="32" name="qrvalue" id="value" placeholder="" readonly />
-          </div>
-        </fieldset>
-      </details>
-      <button onclick="updateOTP()">Update output</button>
-      <hr>
-      <div id="output">
+    <h1 style="margin-bottom: .2em;">Time-based One-time Password Algorithm</h1>
+    <div class="disclaimer">
+      <div>This page is a modified version of <a href="https://jsfiddle.net/russau/ch8PK/">russau's JSFiddle</a>. This website works in the browser and does not transmit any data. <a href="https://github.com/xyr11/totp-generator">Check the GitHub page for more info.</a></div>
+    </div>
+    <p>This page contains a JavaScript implementation of the <em>Time-based One-time Password Algorithm</em> used by Google Authenticator and other OTP apps, described in the <a href="http://tools.ietf.org/id/draft-mraihi-totp-timebased-06.html">TOTP RFC Draft</a>.</p>
+    <p>There are a lot of OTP applications available <a href="https://en.wikipedia.org/wiki/Comparison_of_OTP_applications">(check out Wikipedia's list)</a>. TOTP is an open standard, so you can use these apps to create one-time passwords for your own application. Some apps can add an OTP by scanning a QR code with a valid format.</p>
+    <p>This page implements the same OTP algorithm these apps use &ndash; you would use this same algorithm <em>server-side</em> to verify an OTP. Test it by setting the OTP Label and Base32 secret and scanning the QR code in your app. The OTP on your app should be the same as the one at the bottom of this page. (This browser and your app must be synchronized using an internet time source to generate the same OTP codes.)</p>
+    <p>The properties used below, as well as the QR code generated, are based on the <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">OTP Key URI format by Google</a>.</p>
+    <noscript>
+      <div class="disclaimer">Javascript is needed for this page to work.</div>
+    </noscript>
+    <div id="form">
+      <section>
+        <h2>OTP properties</h2>
+        <div>
+          <label for="label">Label:</label>
+          <div><input type="text" name="label" class="longInput" id="label" placeholder="GitHub: mail@site.com" oninput="fetchOTP()" /></div>
+        </div>
+        <div>
+          <label for="secret">Secret: (<a href="https://en.wikipedia.org/wiki/Base32">in Base32</a>)</label>
+          <div><input type="text" name="secret" class="longInput" id="secret" placeholder="A-Z & 2-7" oninput="fetchOTP()" /></div>
+        </div>
+        <div>
+          <label for="issuer">Issuer: (optional)</label>
+          <div><input type="text" name="issuer" class="longInput" id="issuer" placeholder="GitHub" oninput="fetchOTP()" /></div>
+        </div>
+        <details>
+          <summary>QR Code options</summary>
+          <fieldset>
+            <div>
+              <label for="qrbg">background:</label> <input type="text" size="20" name="qrbg" id="background" placeholder="white" oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              <label for="qrbgalpha">backgroundAlpha:</label> <input type="number" size="3" name="qrbgalpha" id="backgroundAlpha" placeholder="1.00" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              <label for="qrfg">foreground:</label> <input type="text" size="20" name="qrfg" id="foreground" placeholder="black" oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              <label for="qrfgalpha">foregroundAlpha:</label> <input type="number" size="3" name="qrfgalpha" id="foregroundAlpha" placeholder="1.0" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              Level:
+              <input type="radio" name="qrlvl" id="lvlL" value="lvlL" checked onchange="updateQrCode('level','L')" /><label for="lvlL">L</label>
+              <input type="radio" name="qrlvl" id="lvlM" value="lvlM" onchange="updateQrCode('level','M')" /><label for="lvlM">M</label>
+              <input type="radio" name="qrlvl" id="lvlQ" value="lvlQ" onchange="updateQrCode('level','Q')" /><label for="lvlQ">Q</label>
+              <input type="radio" name="qrlvl" id="lvlH" value="lvlH" onchange="updateQrCode('level','H')" /><label for="lvlH">H</label>
+            </div>
+            <div>
+              <label for="qrmime">mime:</label> <input type="text" size="32" name="qrmime" id="mime" oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              <label for="qrpadd">padding (pixels):</label> <input type="number" size="4" name="qrpadd" id="padding" placeholder="null" step="1" min="0" oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              <label for="qrsize">size (pixels):</label> <input type="number" size="4" name="qrsize" id="size" placeholder="200" step="1" oninput="updateQrCode(this.id, this.value)" />
+            </div>
+            <div>
+              <label for="qrvalue">value:</label> <input type="text" size="32" name="qrvalue" id="value" placeholder="" readonly />
+            </div>
+          </fieldset>
+        </details>
+        <button onclick="updateOTP()">Update output</button>
+      </section>
+      <section id="output">
         <h2>One-time Password</h2>
         <div><span id='otp'></span></div>
         <p>Updating in <span id='updatingIn'></span>s</p>
@@ -159,15 +157,15 @@ label {
         </div>
         <h2>HMAC (secret, time)</h2>
         <div id='hmac'></div>
-      </div>
-      <div>
         <h2>QR Code</h2>
         <img id="qrcode" alt="QR Code image">
         <p id="noticeMsg"></p>
-        <hr>
-        <div>Permalink: <span id="permalink" onclick="this.select()"></span></div>
-      </div>
-    </section>
+      </section>
+      <section>
+        <h2>Permalink</h2>
+        <p id="permalink" onclick="this.select()" style="overflow-x:auto"></p>
+      </section>
+    </div>
   </main>
   <script src="js/sha.js"></script>
   <script src="js/qrious.min.js"></script>
