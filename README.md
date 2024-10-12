@@ -3,7 +3,7 @@
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![GitHub Release](https://img.shields.io/github/v/release/xyr11/totp-generator)](https://github.com/xyr11/totp-generator/releases)
-[![GitHub License](https://img.shields.io/github/license/xyr11/totp-generator)](https://github.com/xyr11/totp-generator/blob/main/LICENSE)
+[![GitHub deployments](https://img.shields.io/github/deployments/xyr11/totp-generator/github-pages)](https://xyr11.github.io/totp-generator/)
 
 This project is a modified version of [russau's](https://jsfiddle.net/user/russau/fiddles/) [TOTP One-time password JSFiddle](https://jsfiddle.net/russau/ch8PK/) which fully works in the browser. It uses [QRious](https://github.com/neocotic/qrious) for QR code encoding and [jsSHA](https://github.com/Caligatio/jsSHA) for SHA-1 generation ([sha1.js v3.3.1](https://github.com/Caligatio/jsSHA/blob/8eac02756df4a86831bfb3f6a7a113fd36007aac/dist/sha1.js)).
 
@@ -30,7 +30,7 @@ backgroundAlpha | Background alpha of the QR code | `1.0`
 foreground | Foreground color of the QR code | `black`
 foregroundAlpha | Foreground alpha of the QR code | `1.0`
 level | Error correction level of the QR code (L, M, Q, H) | `L`
-mime | MIME type used to render the image for the QR code | `Image/png`
+mime | MIME type used to render the image for the QR code | `image/png`
 padding | Padding for the QR code (pixels) | None (auto)
 size | Size of the QR code (pixels) | `200`
 
