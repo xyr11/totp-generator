@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TOTP Generator</title>
   <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 html {
   margin: 0 1.2em;
   box-sizing: border-box;
@@ -16,7 +21,7 @@ body {
   max-width: 80ch;
   line-height: 1.5;
 }
-p {
+p, button, hr, .highlight {
   margin: .8em 0
 }
 a {
@@ -26,6 +31,12 @@ a {
 a:hover, a:focus {
   text-decoration: none
 }
+h2 {
+  font-weight: 700;
+  font-size: 1.05em;
+  line-height: 1.5;
+  margin: .5em 0 0;
+}
 .disclaimer {
   padding: .5em 1.2em;
   background: #fffc5a;
@@ -33,144 +44,130 @@ a:hover, a:focus {
   left: -1.2em;
   right: -1.2em;
   width: calc(100% - 1px);
+  box-sizing: content-box;
 }
-form {
+#form {
   margin: 1em auto;
   max-width: 50ch;
-}
-fieldset > * {
-  margin: .3em 0;
+  border: 1px solid #cecece;
+  border-radius: .5em;
+  padding: .5em;
 }
 .longinput {
   width: 95%;
   max-width: 50ch;
 }
 label {
-  font-weight: 700;
+  font-style: italic;
+  margin: .5em 0 0;
+  font-size: 1em;
 }
-.highlight {
+.highlight, button {
+  background-color: #eef0e6;
   display: inline-block; /* so text can be selected on each individual highlight */
-  padding: .1em .3em .2em;
-  margin: 0 .1em;
+  padding: 2px 6px 4px;
+  margin: 0 2px;
   text-align: center;
   white-space: nowrap;
-  border-radius: .25em;
+  border-radius: 8px;
+  font-size: inherit;
 }
-.bg-default {
-  background-color: #eef0e6;
-}
-.bg-red {
-  background-color: #ffa1a1;
-}
-.bg-blue {
-  background-color: #c7e5ff;
-}
+.bg-yellow { background-color: #f9e193 }
+.bg-red { background-color: #ffa1a1 }
+.bg-blue { background-color: #c7e5ff }
   </style>
 </head>
-
 <body>
   <main>
-    <div>
+    <section>
       <h1 style="margin-bottom: .2em;">Time-based One-time Password Algorithm</h1>
       <div class="disclaimer">
-        <div>This page is a modified version of <a href="https://jsfiddle.net/russau/ch8PK/">russau's JSFiddle</a>. This website works in the browser and does not save any data. <a href="https://github.com/xyr11/totp-generator">Check the GitHub for more info.</a></div>
+        <div>This page is a modified version of <a href="https://jsfiddle.net/russau/ch8PK/">russau's JSFiddle</a>. This website works in the browser and does not transmit any data. <a href="https://github.com/xyr11/totp-generator">Check the GitHub page for more info.</a></div>
       </div>
       <p>This page contains a JavaScript implementation of the <em>Time-based One-time Password Algorithm</em> used by Google Authenticator and other OTP apps, described in the <a href="http://tools.ietf.org/id/draft-mraihi-totp-timebased-06.html">TOTP RFC Draft</a>.</p>
       <p>There are a lot of OTP applications available <a href="https://en.wikipedia.org/wiki/Comparison_of_OTP_applications">(check out Wikipedia's list)</a>. TOTP is an open standard, so you can use these apps to create one-time passwords for your own application. Some apps can add an OTP by simply scanning a QR code <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">(more info on the URI format can be found here)</a>.</p>
       <p>This page implements the same OTP algorithm these apps use &ndash; you would use this same algorithm <em>server-side</em> to verify an OTP. Test it by setting the OTP Label and Base32 secret and scanning the QR code in your app. The OTP on your app should be the same as the one at the bottom of this page. (This browser and your app must be synchronized using an internet time source to generate the same OTP codes.)</p>
+      <p>The OTP format used below is based on the <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">OTP Key URI format by Google</a>.</p>
       <noscript>
         <div class="disclaimer">Javascript is needed for this page to work.</div>
       </noscript>
-    </div>
-    <form id="form">
-      <fieldset>
+    </section>
+    <section id="form">
+      <h2>OTP properties</h2>
+      <div>
+        <label for="label">Label:</label>
+        <div><input type="text" name="label" class="longinput" id="label" placeholder="GitHub: mail@site.com" oninput="fetchOTP()" /></div>
+      </div>
+      <div>
+        <label for="secret">Secret: (<a href="https://en.wikipedia.org/wiki/Base32">in Base32</a>)</label>
+        <div><input type="text" name="secret" class="longinput" id="secret" placeholder="A-Z & 2-7" oninput="fetchOTP()" /></div>
+      </div>
+      <div>
+        <label for="issuer">Issuer: (optional)</label>
+        <div><input type="text" name="issuer" class="longinput" id="issuer" placeholder="GitHub" oninput="fetchOTP()" /></div>
+      </div>
+      <details>
+        <summary>QR Code options</summary>
+        <fieldset>
+          <div>
+            <label for="qrbg">background:</label> <input type="text" size="20" name="qrbg" id="background" placeholder="white" oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            <label for="qrbgalpha">backgroundAlpha:</label> <input type="number" size="3" name="qrbgalpha" id="backgroundAlpha" placeholder="1.00" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            <label for="qrfg">foreground:</label> <input type="text" size="20" name="qrfg" id="foreground" placeholder="black" oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            <label for="qrfgalpha">foregroundAlpha:</label> <input type="number" size="3" name="qrfgalpha" id="foregroundAlpha" placeholder="1.0" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            Level:
+            <input type="radio" name="qrlvl" id="lvlL" value="lvlL" checked onchange="updateQrCode('level','L')" /><label for="lvlL">L</label>
+            <input type="radio" name="qrlvl" id="lvlM" value="lvlM" onchange="updateQrCode('level','M')" /><label for="lvlM">M</label>
+            <input type="radio" name="qrlvl" id="lvlQ" value="lvlQ" onchange="updateQrCode('level','Q')" /><label for="lvlQ">Q</label>
+            <input type="radio" name="qrlvl" id="lvlH" value="lvlH" onchange="updateQrCode('level','H')" /><label for="lvlH">H</label>
+          </div>
+          <div>
+            <label for="qrmime">mime:</label> <input type="text" size="32" name="qrmime" id="mime" oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            <label for="qrpadd">padding (pixels):</label> <input type="number" size="4" name="qrpadd" id="padding" placeholder="null" step="1" min="0" oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            <label for="qrsize">size (pixels):</label> <input type="number" size="4" name="qrsize" id="size" placeholder="200" step="1" oninput="updateQrCode(this.id, this.value)" />
+          </div>
+          <div>
+            <label for="qrvalue">value:</label> <input type="text" size="32" name="qrvalue" id="value" placeholder="" readonly />
+          </div>
+        </fieldset>
+      </details>
+      <button onclick="updateOTP()">Update output</button>
+      <hr>
+      <div id="output">
+        <h2>One-time Password</h2>
+        <div><span id='otp'></span></div>
+        <p>Updating in <span id='updatingIn'></span>s</p>
+        <h2>Unix epoch div 30 (padded hex)</h2>
         <div>
-          <label for="label">Label</label>
-          <div><input type="text" name="label" class="longinput" id="label" placeholder="GitHub: mail@site.com" oninput="fetchOTP()" /></div>
+          <span id='epoch'></span>
         </div>
+        <h2>Secret (hex)</h2>
         <div>
-          <label for="secret">Secret (Base32)</label>
-          <div><input type="text" name="secret" class="longinput" id="secret" placeholder="A-Z & 2-7" oninput="fetchOTP()" /></div>
+          <span id="secretHex"></span>
+          <span id='secretHexLength'></span>
         </div>
-        <div>
-          <label for="issuer">Issuer (optional)</label>
-          <div><input type="text" name="issuer" class="longinput" id="issuer" placeholder="GitHub" oninput="fetchOTP()" /></div>
-        </div>
-        <details>
-          <summary>QR Code options</summary>
-          <fieldset>
-            <div>
-              <label for="qrbg">background:</label> <input type="text" size="20" name="qrbg" id="background" placeholder="white" oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              <label for="qrbgalpha">backgroundAlpha:</label> <input type="number" size="3" name="qrbgalpha" id="backgroundAlpha" placeholder="1.00" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              <label for="qrfg">foreground:</label> <input type="text" size="20" name="qrfg" id="foreground" placeholder="black" oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              <label for="qrfgalpha">foregroundAlpha:</label> <input type="number" size="3" name="qrfgalpha" id="foregroundAlpha" placeholder="1.0" step="0.01" max="1" min="0" value="1" required oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              Level:
-              <input type="radio" name="qrlvl" id="lvlL" value="lvlL" checked onchange="updateQrCode('level','L')" /><label for="lvlL">L</label>
-              <input type="radio" name="qrlvl" id="lvlM" value="lvlM" onchange="updateQrCode('level','M')" /><label for="lvlM">M</label>
-              <input type="radio" name="qrlvl" id="lvlQ" value="lvlQ" onchange="updateQrCode('level','Q')" /><label for="lvlQ">Q</label>
-              <input type="radio" name="qrlvl" id="lvlH" value="lvlH" onchange="updateQrCode('level','H')" /><label for="lvlH">H</label>
-            </div>
-            <div>
-              <label for="qrmime">mime:</label> <input type="text" size="32" name="qrmime" id="mime" oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              <label for="qrpadd">padding (pixels):</label> <input type="number" size="4" name="qrpadd" id="padding" placeholder="null" step="1" min="0" oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              <label for="qrsize">size (pixels):</label> <input type="number" size="4" name="qrsize" id="size" placeholder="200" step="1" oninput="updateQrCode(this.id, this.value)" />
-            </div>
-            <div>
-              <label for="qrvalue">value:</label> <input type="text" size="32" name="qrvalue" id="value" placeholder="" readonly />
-            </div>
-          </fieldset>
-        </details>
-        <div id="noticeMsg"></div>
-        <div id="output">
-          <div>
-            <label>QR Code</label>
-            <div><img id="qrcode" alt="QR Code image"></div>
-          </div>
-          <div>
-            <label>Unix epoch div 30 (padded hex)</label>
-            <div>
-              <span id='epoch'></span>
-            </div>
-          </div>
-          <div>
-            <label>Secret (hex)</label>
-            <div>
-              <span id="secretHex"></span>
-              <span id='secretHexLength'></span>
-            </div>
-          </div>
-          <div>
-            <label>HMAC (secret, time)</label>
-            <div id='hmac'></div>
-          </div>
-          <div>
-            <label>One-time Password</label>
-            <div>
-              <span id='otp'></span>
-            </div>
-          </div>
-          <div>
-            <label>Updating in <span id='updatingIn'></span>s</label>
-          </div>
-          <div>
-            <label>Permalink: </label>
-            <div><input type="text" size="32" class="longinput" id="permalink" onclick="this.select();" readonly /></div>
-          </div>
-        </div>
-      </fieldset>
-    </form>
+        <h2>HMAC (secret, time)</h2>
+        <div id='hmac'></div>
+      </div>
+      <div>
+        <h2>QR Code</h2>
+        <img id="qrcode" alt="QR Code image">
+        <p id="noticeMsg"></p>
+        <hr>
+        <div>Permalink: <span id="permalink" onclick="this.select()"></span></div>
+      </div>
+    </section>
   </main>
   <script src="js/sha.js"></script>
   <script src="js/qrious.min.js"></script>
@@ -194,22 +191,17 @@ function leftpad (str, len, pad) {
   }
 }
 
-function errorMessage (text) {
+function errorMessage (text, color = 'red') {
   // Hide the outputs and show a message
-  elem('output').style.display = 'none'
-  elem('noticeMsg').innerHTML = `<span class="highlight bg-red">${text}</span>`
+  elem('qrcode').style.display = 'none'
+  elem('noticeMsg').innerHTML = `<span class="highlight bg-${color}">${text}</span>`
 }
 
 // Initialize QR code generator
 const qr = new QRious({ element: elem('qrcode') })
 const defaultQROptions = { background: 'white', backgroundAlpha: 1, foreground: 'black', foregroundAlpha: 1, level: 'L', mime: 'image/png', padding: null, size: 200 }
 const customQROptions = {}
-
-// Function to update the displayed qr code
 function updateQrCode (property, value) {
-  // Show qr code in case its hidden
-  elem('qrcode').style.display = ''
-
   // If the previous value is the same as the given value, you don't need to update the variable
   if (customQROptions[property] === value) return
 
@@ -220,7 +212,7 @@ function updateQrCode (property, value) {
   qr.set({ ...defaultQROptions, ...customQROptions })
 }
 
-const otpFields = {}
+let otpFields = {}
 // Fetch value of OTP fields and put to object
 function fetchOTP () {
   const label = elem('label').value
@@ -231,16 +223,17 @@ function fetchOTP () {
   if (otpFields.secret === secret && otpFields.label === label && otpFields.issuer === issuer) return
 
   // Add to otpFields variable
-  otpFields.label = label
-  otpFields.secret = secret
-  otpFields.issuer = issuer
+  otpFields = { label, secret, issuer }
 
   // Check if user has given the required values
-  if (!secret || !label) {
-    return errorMessage('Fill in the Label and Secret fields.')
-  }
-  elem('output').style.display = ''
+  if (!secret) return errorMessage('Fill in the Secret field.')
+
+  // Reset message box
+  elem('qrcode').style.display = ''
   elem('noticeMsg').innerHTML = ''
+
+  // Don't show qr code if label is absent
+  if (!label) errorMessage('Fill in the Label field.', 'yellow')
 
   // Update OTP
   updateOTP()
@@ -272,10 +265,10 @@ function updateOTP () {
   const epoch = Math.round(new Date().getTime() / 1000.0)
   const time = leftpad(dec2hex(Math.floor(epoch / 30)), 16, '0')
   // Show it
-  elem('epoch').innerHTML = `<span class="highlight bg-default">${time}</span>`
-  elem('secretHex').innerHTML = `<span class="highlight bg-default">${key}</span>`
+  elem('epoch').innerHTML = `<span class="highlight">${time}</span>`
+  elem('secretHex').innerHTML = `<span class="highlight">${key}</span>`
   elem('secretHexLength').innerHTML = ((key.length * 4) + ' bits')
-  elem('secretHex').innerHTML = `<span class="highlight bg-default">${time}</span>`
+  elem('secretHex').innerHTML = `<span class="highlight">${time}</span>`
 
   // Try hashing the key
   const shaObj = new jsSHA('SHA-1', 'HEX')
@@ -290,7 +283,6 @@ function updateOTP () {
       elem('hmac').innerHTML = '<span class="highlight bg-red">Secret (hex) must be in byte elements</span>'
       elem('otp').innerHTML = '<span class="highlight bg-red">Error</span>'
       elem('qrcode').style.display = 'none'
-      elem('permalink').value = ''
       return
     }
     console.error(err)
@@ -303,9 +295,9 @@ function updateOTP () {
   const part3 = hmac.substr(offset * 2 + 8, hmac.length - offset)
   // Display it
   elem('hmac').innerHTML = ''
-  if (part1.length > 0) elem('hmac').innerHTML += `<span class="highlight bg-default">${part1}</span>`
+  if (part1.length > 0) elem('hmac').innerHTML += `<span class="highlight">${part1}</span>`
   elem('hmac').innerHTML += `<span class="highlight bg-blue">${part2}</span>`
-  if (part3.length > 0) elem('hmac').innerHTML += `<span class="highlight bg-default">${part3}</span>`
+  if (part3.length > 0) elem('hmac').innerHTML += `<span class="highlight">${part3}</span>`
 
   // Compute OTP
   let otp = (hex2dec(hmac.substr(offset * 2, 8)) & hex2dec('7fffffff')) + ''
@@ -320,11 +312,15 @@ function updateOTP () {
   updateQrCode('value', keyUri)
   elem('value').value = keyUri
 
-  // Add permalink
   // Combine all the inputted data
-  const searchParams = new URLSearchParams({ ...otpFields, ...customQROptions })
+  let allInputs = ({ ...otpFields, ...customQROptions })
+  // Remove blank fields
+  allInputs = Object.fromEntries(Object.entries(allInputs).filter(([prop, value]) => value !== '' && value != null))
+  const searchParams = new URLSearchParams(allInputs)
   searchParams.delete('value')
-  elem('permalink').value = window.location.origin + window.location.pathname + '?' + searchParams.toString()
+  // Add permalink
+  const permalink = window.location.origin + window.location.pathname + '?' + searchParams.toString()
+  elem('permalink').innerHTML = `<a href="${permalink}">${permalink}</a>`
 }
 
 // Read query fields / URL params
